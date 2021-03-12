@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Models\Deudor;
+use App\Models\Institucion;
 // use Illuminate\Support\Facades\Storage;
 class ParserController extends Controller
 {
@@ -25,43 +26,49 @@ class ParserController extends Controller
     		$registros = explode("\n", File::get($file));
     		foreach ($registros as $registro) {
 
-                $cui = substr($registro, 13, 11);
-                $situacionPrestamo = substr($registro, 27, 2);
-                $sumaPrestamos = substr($registro, 29, 12);
-                $idInstitucion = substr($registro, 13, 11);
-                $deudor = Deudor::where('cui', $cui)->first();
+                $cui = intval(substr($registro, 13, 11));
+                $situacionPrestamo = intval(substr($registro, 27, 2));
+                $sumaPrestamos = floatval(substr($registro, 29, 12));
+                $idInstitucion = intval(substr($registro, 0, 5));
+
+                $deudor = Deudor::where('cui', $cui)
+                            ->where('idInstitucion', $idInstitucion)
+                            ->get()
+                            ->first();
+                $institucion = Institucion::where('codigo', $idInstitucion)->first();
+                
+                /*Deudor*/
+
                 if ($deudor) {
-                    $deudor->sumaPrestamos = $deudor->sumaPrestamos + $sumaPrestamo;
+                    $deudor->sumaPrestamos = $deudor->sumaPrestamos + $sumaPrestamos;
                     if ($deudor->situacionPrestamo > $situacionPrestamo) {
                         $deudor->situacionPrestamo = $situacionPrestamo;
                     }
+                }else{
+                    $deudor = new Deudor();
+                    $deudor->cui = $cui;
+                    $deudor->situacionPrestamo = $situacionPrestamo;
+                    $deudor->sumaPrestamos = $sumaPrestamos;
+                    $deudor->idInstitucion = $idInstitucion;
                 }
-                die();
-                if ($cui) {
-                    # code...
+                /*Institucion*/
+                $institucion = Institucion::where('codigo', $idInstitucion)->first();
+                if ($institucion) {
+                    $institucion->sumaPrestamos = $institucion->sumaPrestamos + $sumaPrestamos;
+                }else{
+                    $institucion = new Institucion();
+                    $institucion->codigo = $idInstitucion;
+                    $institucion->sumaPrestamos = $sumaPrestamos;
                 }
                 
-                $deudor = new Deudor();
-                $deudor->cui = substr($registro, 13, 11);
-                $deudor->situacionPrestamo = 
-                $deudor->sumaPrestamos =    
+                $institucion->save();
                 $deudor->save();
 
     		}
 
-            $deudores = Deudor::all();
-
-            var_dump($deudores[0]);
-
-
-    		die();
-
     	}
 
-    	return redirect()->action([ParserController::class, 'index'])->with('status', 'Archivo cargado');
+    	return redirect()->action([ParserController::class, 'index'])->with('status', 'Archivo cargado correctamente');
     }
 
-    public function limpiar(){
-
-    }
 }

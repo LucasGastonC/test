@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+// use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 
-class Institucion extends Model
+class Institucion extends Eloquent
 {
     use HasFactory;
 
-
+    protected $connection = 'mongodb';
+    protected $collection = 'instituciones';
 
     protected $fillable = [
         'codigo',
